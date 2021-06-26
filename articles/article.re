@@ -159,6 +159,21 @@ The options are as follows
 
 https://qiita.com/Chanmoro/items/9a3c86bb465c1cce738a
 
+- commandとはなにか？
+
+```
+selenium-proxy-server_1  | request method: 'GET', body: ''
+selenium-proxy-server_1  | response status: '404', body: '{
+selenium-proxy-server_1  |   "value": {
+selenium-proxy-server_1  |     "error": "unknown command",
+selenium-proxy-server_1  |     "message": "Unable to find handler for (GET) \u002fwd\u002fhub",
+selenium-proxy-server_1  |     "stacktrace": ""
+selenium-proxy-server_1  |   }
+selenium-proxy-server_1  | }'
+```
+
+commandがURIに入ってくるAPI Interfaceになっている気配がある
+
 Selenium Serverのログ
 
 ```

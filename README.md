@@ -28,9 +28,9 @@ https://techbooster.booth.pm/ でPDF版の販売予定があります
 
 Atom以外の環境の場合、[prh](https://github.com/vvakame/prh)または[reviewjs-prh](https://github.com/vvakame/reviewjs-prh)とRedPenを自力でなんとか頑張って適用してください。
 
-警告やlintのエラーを放置して編集に突入してしまうと @mhidaka が過労で死にます。
-RedPenは試験的に導入したため、知見やルールについてまだ固まっていません。
-意見・感想・修正案などあれば @mhidaka までご相談ください。
+### VSCodeでの環境整備
+
+- [prh](https://github.com/vvakame/prh) については[VSCode拡張](https://marketplace.visualstudio.com/items?itemName=vvakame.vscode-prh-extention)を利用
 
 ## PDF出力する
 

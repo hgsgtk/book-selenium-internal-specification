@@ -36,14 +36,17 @@ Atom以外の環境の場合、[prh](https://github.com/vvakame/prh)または[re
 
 rbenvやnodebrewを利用してRubyやNode.jsの準備をしている前提です。
 もしそうではない場合、適宜sudoを補うこと。
+
+- [rbenvを用いたRuby環境のセットアップ](https://qiita.com/nishina555/items/63ebd4a508a09c481150)
+
 Node.jsは4.x系以上が必須です。
 
 graphvizを使ったのでbrew install graphvizとかが必要かもしれません。
 
 ```
 $ gem install bundler
-$ git clone git@github.com:TechBooster/ReVIEW-Template.git
-$ cd ReVIEW-Template
+$ bundle install
+$ bundle update --bundler
 $ npm install
 $ npm run pdf
 ```

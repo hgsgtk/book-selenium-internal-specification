@@ -501,6 +501,25 @@ client -> proxy -> driver へと渡っていないのかな、なんだかよく
 
 Python codeのdriverからリクエストするときのmethod, url, bodyをとってみた。
 
+```python
+        parsed_url = parse.urlparse(url)
+        headers = self.get_remote_connection_headers(parsed_url, self.keep_alive)
+        resp = None
+        if body and method != 'POST' and method != 'PUT':
+            body = None
+
+        if self.keep_alive:
+            print("method: {}, url: {}, body: {}", method, url, body)
+            resp = self._conn.request(method, url, body=body, headers=headers)
+
+            statuscode = resp.status
+        else:
+            http = urllib3.PoolManager(timeout=self._timeout)
+            resp = http.request(method, url, body=body, headers=headers)
+```
+
+そしたらこう
+
 ```
 method: {}, url: {}, body: {} POST http://127.0.0.1:52540/session {"capabilities": {"firstMatch": [{}], "alwaysMatch": {"browserName": "chrome", "platformName": "any", "goog:chromeOptions": {"extensions": [], "args": ["--proxy-server=127.0.0.1:8080", "--headless"]}}}, "desiredCapabilities": {"browserName": "chrome", "version": "", "platform": "ANY", "goog:chromeOptions": {"extensions": [], "args": ["--proxy-server=127.0.0.1:8080", "--headless"]}}}
 method: {}, url: {}, body: {} POST http://127.0.0.1:52540/session/525377f9630dc8c6254dc82d72abcbaa/url {"url": "https://www.google.com/"}

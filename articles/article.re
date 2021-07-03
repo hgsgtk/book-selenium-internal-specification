@@ -3,6 +3,16 @@
 
 https://www.codegrid.net/articles/2014-selenium-1/
 
+BrowserStackによる解説
+
+かんたんな解説になっていてよい
+
+https://www.browserstack.com/guide/selenium-webdriver-tutorial
+
+Selenium Full CourceについてのYouTubeチャンネルがない。
+
+https://www.bestproxyreviews.com/selenium-proxy/
+
 == Selenium 1,2,3
 
 Selenium の歴史
@@ -37,6 +47,15 @@ Selenium Serverとドライバは当然JSON Wire Protocolで通信しますが�
 
 WebDriverの通信方式 JSON Wire Protocolとは？今も現役？つかってなさそうかな？
 今は使っていない、W3CのWeb Driver仕様
+
+https://www.browserstack.com/guide/selenium-webdriver-tutorial
+
+BrowserStack での解説記事では使っているということになりそう
+
+> JSON is an acronym for JavaScript Object Notation. It is an open standard that provides a transport mechanism for transferring data between client and server on the web. It provides support for various data structures like arrays and objects which makes it easier to read and write data from JSON.
+
+
+JSON Wire Protocol だけをめっちゃ解説するっていうのもあり
 
 === Selenium Server
 
@@ -168,6 +187,43 @@ WebDriverのHttpProxyとしてデザインする場合
 
 https://www.selenium.dev/documentation/en/webdriver/http_proxies/
 
+日本語ドキュメントはこちら https://www.selenium.dev/documentation/ja/webdriver/http_proxies/
+
+> プロキシサーバーは、クライアントとサーバー間の要求の仲介役として機能します。 簡単に言えば、トラフィックはプロキシサーバーを経由して、要求したアドレスに戻り、戻ってきます。
+
+- ネットワークトラフィックをキャプチャする
+- ウェブサイトによって行われた模擬バックエンドを呼び出す
+- 複雑なネットワークトポロジーまたは厳格な企業の制限/ポリシーの下で、必要なWebサイトにアクセスします。
+
+ということで、よき
+
+BrowserStackの解説が以下である。
+
+https://www.browserstack.com/guide/set-proxy-in-selenium
+
+> A proxy is an intermediary between client requests and server responses. Proxies are primarily used to ensure privacy and encapsulation between numerous interactive systems.
+
+Proxy serverの使い方についてはいくつか記事があるが、使い方については全然記事がないな。
+ここはニッチな需要がありそう。
+
+https://qiita.com/skimhiro/items/de501f45607d6a09cde5
+
+参考事例となりそうなproxy実装
+
+https://github.com/lightbody/browsermob-proxy
+
+```
+$ ./browsermob-proxy -port 8080
+```
+
+こういうインタフェースね
+
+https://github.com/lightbody/browsermob-proxy/releases ここから最新の実行binをダウンロードする
+
+Javaがない場合は素直にJavaのページからinstallすればよい
+
+
+
 === commandとはなにか？
 
 ```
@@ -292,3 +348,198 @@ selenium-server_1        | 21:38:44.244 INFO [LocalSessionMap.lambda$new$0] - De
 ```
 
 todo: selenium server内部での話なのか、その先なのかは要確認
+
+== Driverバージョン違い問題
+
+https://chromedriver.chromium.org/downloads
+
+Chrome driver installしようね
+https://chromedriver.storage.googleapis.com/index.html?path=91.0.4472.101/
+
+`brew install chromedriver` でも可能
+
+== Selenium Client Driverを読む
+
+https://github.com/SeleniumHQ/selenium/blob/b300c358f65f33c0cf43177316f433601c027bdb/py/README.rst#L2
+
+読んでみましょう、Pythonで読んでみますよ
+
+READMEにあるとおりこちらでPython的なAPI仕様が見れるよ https://www.selenium.dev/selenium/docs/api/py/webdriver_chromium/selenium.webdriver.chromium.options.html#module-selenium.webdriver.chromium.options
+
+たぶんここがClient DriverとしてのProxy実装だね
+
+https://github.com/SeleniumHQ/selenium/blob/0e0194b0e52a34e7df4b841f1ed74506beea5c3e/py/selenium/webdriver/common/proxy.py#L62
+
+httpProxyだけなのかな？って思ってたら結構あるのね
+
+```python
+    ftpProxy = ''
+    httpProxy = ''
+    noProxy = ''
+    proxyAutoconfigUrl = ''
+    sslProxy = ''
+    socksProxy = ''
+```
+
+動作コードだけ見てもチョットわからないのでテストコードを見てみよう
+
+https://github.com/SeleniumHQ/selenium/blob/b300c358f65f33c0cf43177316f433601c027bdb/py/test/selenium/webdriver/common/proxy_tests.py#L23
+
+```python
+MANUAL_PROXY = {
+    'httpProxy': 'some.url:1234',
+    'ftpProxy': 'ftp.proxy',
+    'noProxy': 'localhost, foo.localhost',
+    'sslProxy': 'ssl.proxy:1234',
+    'socksProxy': 'socks.proxy:65555',
+    'socksUsername': 'test',
+    'socksPassword': 'test',
+    'socksVersion': 5,
+}
+```
+
+firefoxの場合はProxy自体をsetするところはここよ https://github.com/SeleniumHQ/selenium/blob/a22d0fd220abf69e7ad32100f6f60a426dfba9c6/py/selenium/webdriver/firefox/options.py#L100
+
+ChromeDriverはChrniumDriverをinheritしてる
+
+さて、よくわからんから、うまくproxyが機能しなっかったときのこのエラーをみてみようか
+
+```
+$ python go_google_directly_webdriver.py
+Traceback (most recent call last):
+  File "go_google_directly_webdriver.py", line 10, in <module>
+    driver.get('https://www.google.com/')
+  File "/Users/kazukihigashiguchi/.pyenv/versions/3.8.8/lib/python3.8/site-packages/selenium/webdriver/remote/webdriver.py", line 333, in get
+    self.execute(Command.GET, {'url': url})
+  File "/Users/kazukihigashiguchi/.pyenv/versions/3.8.8/lib/python3.8/site-packages/selenium/webdriver/remote/webdriver.py", line 321, in execute
+    self.error_handler.check_response(response)
+  File "/Users/kazukihigashiguchi/.pyenv/versions/3.8.8/lib/python3.8/site-packages/selenium/webdriver/remote/errorhandler.py", line 242, in check_response
+    raise exception_class(message, screen, stacktrace)
+selenium.common.exceptions.WebDriverException: Message: unknown error: net::ERR_TUNNEL_CONNECTION_FAILED
+  (Session info: chrome=91.0.4472.114)
+ ```
+
+共通で発行される基底例外
+
+https://github.com/SeleniumHQ/selenium/blob/f75343f8b74bb90a760560659168ba7c1fc071aa/py/selenium/common/exceptions.py#L25
+
+`webdriver.py", line 321` にヒントがあるので見に行こうね
+
+`def start_session(self, capabilities: dict, browser_profile=None) -> None:` である :)
+
+start_sessionとはあの /session ですね、わかりやすいですねぇ
+
+`def execute(self, driver_command: str, params: dict = None) -> dict:` でdriver commandを送るんですねぇ
+
+https://github.com/SeleniumHQ/selenium/blob/e46dba531896f67bdb93ba8d9e1d64f8b6b75b6f/py/selenium/webdriver/remote/webdriver.py#L380
+
+ちょっと場所は違うけどおそらくこのエラーレスポンスハンドリングをしているのかな https://github.com/SeleniumHQ/selenium/blob/e46dba531896f67bdb93ba8d9e1d64f8b6b75b6f/py/selenium/webdriver/remote/webdriver.py#L400
+
+statusがどれでもないときは https://github.com/SeleniumHQ/selenium/blob/916168f403dded05f878fe189d68c0f9152335c9/py/selenium/webdriver/remote/errorhandler.py#L196 のようにエラーが返る
+
+ってことは適当にstatusを返せばエラー時のフィードバックが送れるんかな？
+
+やってみたけどかわらへんわ、はは
+
+```
+selenium.common.exceptions.WebDriverException: Message: unknown error: net::ERR_TUNNEL_CONNECTION_FAILED
+```
+
+どこだろうね
+
+なかのレスポンスを見た、そもそもってことね
+
+```
+        print(response)
+```
+
+```
+{'status': 500, 'value': '{"value":{"error":"unknown error","message":"unknown error: net::ERR_TUNNEL_CONNECTION_FAILED\\n  (Session info: headless chrome=91.0.4472.114)","stacktrace":"0   chromedriver                        0x00000001050c2649 chromedriver + 2741833\\n1   chromedriver                        0x0000000105778fb3 chromedriver + 9781171\\n2   chromedriver                        0x0000000104e4f308 chromedriver + 172808\\n3   chromedriver                        0x0000000104e49423 chromedriver + 148515\\n4   chromedriver                        0x0000000104e3b7fd chromedriver + 92157\\n5   chromedriver                        0x0000000104e3c5ba chromedriver + 95674\\n6   chromedriver                        0x0000000104e3ba75 chromedriver + 92789\\n7   chromedriver                        0x0000000104e3b121 chromedriver + 90401\\n8   chromedriver                        0x0000000104e3a12c chromedriver + 86316\\n9   chromedriver                        0x0000000104e3a423 chromedriver + 87075\\n10  chromedriver                        0x0000000104e50d1e chromedriver + 179486\\n11  chromedriver                        0x0000000104eb2671 chromedriver + 579185\\n12  chromedriver                        0x0000000104ea0552 chromedriver + 505170\\n13  chromedriver                        0x0000000104eb1e94 chromedriver + 577172\\n14  chromedriver                        0x0000000104ea0863 chromedriver + 505955\\n15  chromedriver                        0x0000000104e76ef1 chromedriver + 335601\\n16  chromedriver                        0x0000000104e78125 chromedriver + 340261\\n17  chromedriver                        0x000000010508975c chromedriver + 2508636\\n18  chromedriver                        0x000000010509c686 chromedriver + 2586246\\n19  chromedriver                        0x000000010506eb51 chromedriver + 2399057\\n20  chromedriver                        0x000000010509da5f chromedriver + 2591327\\n21  chromedriver                        0x000000010507f6ec chromedriver + 2467564\\n22  chromedriver                        0x00000001050b72d8 chromedriver + 2695896\\n23  chromedriver                        0x00000001050b746b chromedriver + 2696299\\n24  chromedriver                        0x00000001050c7558 chromedriver + 2762072\\n25  libsystem_pthread.dylib             0x00007fff2050a8fc _pthread_start + 224\\n26  libsystem_pthread.dylib             0x00007fff20506443 thread_start + 15\\n"}}'}
+```
+
+ん？これはどこからきているかというと？
+
+WebDriverのinitializeは完了してるので、ここまでは問題ない（実際だからこそbrowserが立ち上がっている側面がある）
+
+```python
+driver.get('https://www.google.com/')
+```
+
+ここでこけてるようだったわ
+
+=== session開始時のリクエストはproxyには飛ばないの？
+
+TBD proxyがどこまで関与する仕様なのかを要調査
+
+一個目のリクエストに対するレスポンス
+
+```json
+{'value': {'capabilities': {'acceptInsecureCerts': False, 'browserName': 'chrome', 'browserVersion': '91.0.4472.114', 'chrome': {'chromedriverVersion': '91.0.4472.101 (af52a90bf87030dd1523486a1cd3ae25c5d76c9b-refs/branch-heads/4472@{#1462})', 'userDataDir': '/var/folders/t5/3p4crbvn2476w3xbrmstrmtr0000gn/T/.com.google.Chrome.yiB7kH'}, 'goog:chromeOptions': {'debuggerAddress': 'localhost:52367'}, 'networkConnectionEnabled': False, 'pageLoadStrategy': 'normal', 'platformName': 'mac os x', 'proxy': {}, 'setWindowRect': True, 'strictFileInteractability': False, 'timeouts': {'implicit': 0, 'pageLoad': 300000, 'script': 30000}, 'unhandledPromptBehavior': 'dismiss and notify', 'webauthn:extension:largeBlob': True, 'webauthn:virtualAuthenticators': True}, 'sessionId': '6cfb3a2b62a563fd1f6e0353bf287bd6'}}
+```
+
+これはセッション開始する子だわね
+
+ふたつめで500がでている
+
+```
+{'status': 500, 'value': '{"value":{"error":"unknown error","message":"unknown error: net::ERR_TUNNEL_CONNECTION_FAILED\\n  (Session info: headless chrome=91.0.4472.114)","stacktrace":"0   chromedriver                        0x000000010fbdc649 chromedriver + 2741833\\n1   chromedriver                        0x0000000110292fb3 chromedriver + 9781171\\n2   chromedriver                        0x000000010f969308 chromedriver + 172808\\n3   chromedriver                        0x000000010f963423 chromedriver + 148515\\n4   chromedriver                        0x000000010f9557fd chromedriver + 92157\\n5   chromedriver                        0x000000010f9565ba chromedriver + 95674\\n6   chromedriver                        0x000000010f955a75 chromedriver + 92789\\n7   chromedriver                        0x000000010f955121 chromedriver + 90401\\n8   chromedriver                        0x000000010f95412c chromedriver + 86316\\n9   chromedriver                        0x000000010f954423 chromedriver + 87075\\n10  chromedriver                        0x000000010f96ad1e chromedriver + 179486\\n11  chromedriver                        0x000000010f9cc671 chromedriver + 579185\\n12  chromedriver                        0x000000010f9ba552 chromedriver + 505170\\n13  chromedriver                        0x000000010f9cbe94 chromedriver + 577172\\n14  chromedriver                        0x000000010f9ba863 chromedriver + 505955\\n15  chromedriver                        0x000000010f990ef1 chromedriver + 335601\\n16  chromedriver                        0x000000010f992125 chromedriver + 340261\\n17  chromedriver                        0x000000010fba375c chromedriver + 2508636\\n18  chromedriver                        0x000000010fbb6686 chromedriver + 2586246\\n19  chromedriver                        0x000000010fb88b51 chromedriver + 2399057\\n20  chromedriver                        0x000000010fbb7a5f chromedriver + 2591327\\n21  chromedriver                        0x000000010fb996ec chromedriver + 2467564\\n22  chromedriver                        0x000000010fbd12d8 chromedriver + 2695896\\n23  chromedriver                        0x000000010fbd146b chromedriver + 2696299\\n24  chromedriver                        0x000000010fbe1558 chromedriver + 2762072\\n25  libsystem_pthread.dylib             0x00007fff2050a8fc _pthread_start + 224\\n26  libsystem_pthread.dylib             0x00007fff20506443 thread_start + 15\\n"}}'}
+```
+
+Proxy serverを介さないとこうなるべきっていう話らしいよ
+
+```
+$ python go_google_directly_webdriver.py
+{'value': {'capabilities': {'acceptInsecureCerts': False, 'browserName': 'chrome', 'browserVersion': '91.0.4472.114', 'chrome': {'chromedriverVersion': '91.0.4472.101 (af52a90bf87030dd1523486a1cd3ae25c5d76c9b-refs/branch-heads/4472@{#1462})', 'userDataDir': '/var/folders/t5/3p4crbvn2476w3xbrmstrmtr0000gn/T/.com.google.Chrome.ojvdXQ'}, 'goog:chromeOptions': {'debuggerAddress': 'localhost:52393'}, 'networkConnectionEnabled': False, 'pageLoadStrategy': 'normal', 'platformName': 'mac os x', 'proxy': {}, 'setWindowRect': True, 'strictFileInteractability': False, 'timeouts': {'implicit': 0, 'pageLoad': 300000, 'script': 30000}, 'unhandledPromptBehavior': 'dismiss and notify', 'webauthn:extension:largeBlob': True, 'webauthn:virtualAuthenticators': True}, 'sessionId': '71712c2a85ab882be63ac106a9c02fab'}}
+{'value': None}
+{'value': 'https://www.google.com/'}
+https://www.google.com/
+{'value': None}
+```
+
+client -> proxy -> driver へと渡っていないのかな、なんだかよくわからん感じでおわったみたいなことに
+もうちょい proxy にリクエストするのはどういう感じなのかを確認しよう
+
+Python codeのdriverからリクエストするときのmethod, url, bodyをとってみた。
+
+```
+method: {}, url: {}, body: {} POST http://127.0.0.1:52540/session {"capabilities": {"firstMatch": [{}], "alwaysMatch": {"browserName": "chrome", "platformName": "any", "goog:chromeOptions": {"extensions": [], "args": ["--proxy-server=127.0.0.1:8080", "--headless"]}}}, "desiredCapabilities": {"browserName": "chrome", "version": "", "platform": "ANY", "goog:chromeOptions": {"extensions": [], "args": ["--proxy-server=127.0.0.1:8080", "--headless"]}}}
+method: {}, url: {}, body: {} POST http://127.0.0.1:52540/session/525377f9630dc8c6254dc82d72abcbaa/url {"url": "https://www.google.com/"}
+```
+
+これあれか、proxyが意識するのはwebdriverだけで、webdriverに対して「ここがproxyです」っていうのをargsでwebdriver指定時に共有するっていうだけの設計なのか
+clientはぶっちゃけproxyが実際どういう責務を持っている子なのかはよくしらない。
+
+`"args": ["--proxy-server=127.0.0.1:8080", "--headless"]}`
+
+次知るべきはproxyを渡されたwebdriverがどのような振る舞いをしてproxyと通信するのか、どういったプロトコルがそこにあるのかについて確認するというのが必要
+
+=== WebDriverの振る舞い、proxyとの通信方法
+
+TODO: WebDriverの実装とか仕様がどこで見れるのかを確認する
+
+=== リクエスト時のHTTP Header
+
+```
+{'Accept': 'application/json', 'Content-Type': 'application/json;charset=UTF-8', 'User-Agent': 'selenium/3.141.0 (python mac)', 'Connection': 'keep-alive'}
+{'Accept': 'application/json', 'Content-Type': 'application/json;charset=UTF-8', 'User-Agent': 'selenium/3.141.0 (python mac)', 'Connection': 'keep-alive'}
+{'Accept': 'application/json', 'Content-Type': 'application/json;charset=UTF-8', 'User-Agent': 'selenium/3.141.0 (python mac)', 'Connection': 'keep-alive'}
+https://www.google.com/
+{'Accept': 'application/json', 'Content-Type': 'application/json;charset=UTF-8', 'User-Agent': 'selenium/3.141.0 (python mac)', 'Connection': 'keep-alive'}
+```
+
+Proxy設定があろうがなかろうが変わらない
+
+=== Selenium repositoryの読み方
+
+selenium clientが各言語で入ってるよ
+
+=== driver command一覧
+
+=== response
+
+status一覧
+
+これめっちゃ極めたら自分のselenium client作れるようになるな
+JSON Wire Protocolを理解して己のselenium clientを作ろう
+それをGoでやってもいいかもしれないね
+Rustでも可
